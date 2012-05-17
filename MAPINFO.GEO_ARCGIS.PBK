@@ -99,6 +99,10 @@ IS
        point := MDSYS.sdo_point_type (x, y, NULL);
 
        return point;
+/*    exception
+        when others then
+            return MDSYS.sdo_point_type (-74.286891, 40.564404, NULL); --Woodbridge Geocode
+*/
     END;
 
 
