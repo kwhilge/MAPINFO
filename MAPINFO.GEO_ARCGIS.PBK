@@ -1,0 +1,349 @@
+CREATE OR REPLACE 
+PACKAGE BODY GEO_ARCGIS
+IS
+  -- mrosenblum@dulcian.com - May 2006 -- support of GeoCoding Cartridge  v4
+  -- pburzi@dulcian.com - May 2008 -- modified to support physician maps
+  --pburzi@dulcian.com - July 2008 - modified getZoneIdByAddres procedures/functions to call a new function which resolves the zone id by State / Zip only
+
+
+  function f_geocodeAddress(i_street_tx varchar2, i_city_tx varchar2, i_state_tx varchar2, i_zip_tx varchar2, i_country_tx varchar2)
+  return MDSYS.sdo_point_type
+  is
+
+       soap_request   VARCHAR2 (4000);
+       http_req       UTL_HTTP.req;
+       http_resp      UTL_HTTP.resp;
+       responseData   VARCHAR2 (32000);
+       responseXml    XMLTYPE;
+       x              VARCHAR2 (255);
+       y              VARCHAR2 (255);
+       point          MDSYS.sdo_point_type;
+
+       v_url_tx       varchar2(255) := 'http://dbdev01:8399/arcgis/services/AFRISSR/GeocodeServer';
+    BEGIN
+       --Generate SOAP Request
+       soap_request :=
+          '<?xml version="1.0" encoding="UTF-8"?>
+            <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns0="http://www.esri.com/schemas/ArcGIS/9.3">
+                <env:Body>
+                    <ns0:GeocodeAddress>
+                        <Address>
+                            <PropertyArray>
+                                <PropertySetProperty>
+                                    <Key>Address</Key>
+                                    <Value xsi:type="xsd:string">'||i_street_tx||'</Value>
+                                </PropertySetProperty>
+                                <PropertySetProperty>
+                                    <Key>City</Key>
+                                    <Value xsi:type="xsd:string">'||i_city_tx||'</Value>
+                                </PropertySetProperty>
+                                <PropertySetProperty>
+                                    <Key>State</Key>
+                                    <Value xsi:type="xsd:string">'||i_state_tx||'</Value>
+                                </PropertySetProperty>
+                                <PropertySetProperty>
+                                    <Key>Postal</Key>
+                                    <Value xsi:type="xsd:string">'||i_zip_tx||'</Value>
+                                </PropertySetProperty>
+                                <PropertySetProperty>
+                                    <Key>Country</Key>
+                                    <Value xsi:type="xsd:string">'||i_country_tx||'</Value>
+                                </PropertySetProperty>
+                            </PropertyArray>
+                        </Address>
+                        <PropMods>
+                            <PropertyArray/>
+                        </PropMods>
+                    </ns0:GeocodeAddress>
+                </env:Body>
+            </env:Envelope>';
+
+       --Create an HTTP request to the server
+       http_req := UTL_HTTP.begin_request(v_url_tx, 'POST', 'HTTP/1.1');
+
+       --Set the headers
+       UTL_HTTP.set_header (http_req, 'Content-Type', 'text/xml');
+       UTL_HTTP.set_header (http_req, 'Content-Length', LENGTH (soap_request));
+       UTL_HTTP.set_header (http_req, 'SOAPAction', '');
+
+       --Write the SOAP envelope to the request
+       UTL_HTTP.write_text (http_req, soap_request);
+
+       --Get the server response and read back the results
+       http_resp := UTL_HTTP.get_response (http_req);
+       UTL_HTTP.read_text (http_resp, responseData);
+
+       --Close the connection out
+       UTL_HTTP.end_response(http_resp);
+       dbms_output.put_line(responseData);
+       --Parse the result into an XML object
+       responseXml := XMLTYPE.createxml (responseData);
+
+       --Extract the X, Y coordinate
+       x :=
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="X"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/9.3"'
+                 )
+             );
+       y :=
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="Y"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/9.3"'
+                 )
+             );
+
+       --Create a point with the coordinate
+       point := MDSYS.sdo_point_type (x, y, NULL);
+
+       return point;
+    END;
+
+
+  function f_getZoneIDByStateZIP(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2)
+  return varchar2
+  is
+    point   MDSYS.sdo_point_type;   -- the geoaddress object
+    v_out_zone_id varchar2(256);
+  begin
+    -- Create an misys geoaddress2 object containing the address to be geocoded.
+    point := f_geocodeAddress(street, city, state, postal, 'USA');
+
+
+    if type_cd in ('HP','HP_MAP')
+    then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM hp_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+    elsif upper(type_cd) in ('LINE', 'LINE_MAP')
+    then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM line_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+    elsif type_cd in ('OA', 'OA_MAP')
+    then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM OA_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+    elsif type_cd in ('PHYSICIAN', 'PHYSICIAN_MAP')
+    then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM physician_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+    end if;
+
+  return v_out_zone_id;
+  exception
+        when others
+        then
+           return getZoneIdByState (state, type_cd);
+  end;
+
+  procedure p_getZoneIdBySchool(in_mirs_code varchar2, out_zone_tx out varchar2, out_priority_cd out varchar2) is
+  begin
+    select afrc_billet, SCHOOL_PRIORITY into out_zone_tx, out_priority_cd
+    from school
+     where --mirs_code = in_mirs_code;
+      school_cod =in_mirs_code;  ---looks like asvabs pass school code rather than mirs code pdorsey march 2005
+
+    exception
+    when others then
+       null;
+  end;
+
+  function getZoneIdByAddres(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2) return varchar2
+  --- valid types  'HP_MAP' 'LINE_MAP'  'OA_MAP'
+  --- written by mishe
+  ---modified by pdorsey@dulcian.com Jan 2005 to call state map if failed
+  as
+        point   MDSYS.sdo_point_type;   -- the geoaddress object
+        v_out_zone_id varchar2(256);
+  begin
+    point := f_geocodeAddress(street, city, state, postal, 'USA');
+    dbms_output.put_line('MH '||point.x);
+
+    if type_cd in ('HP','HP_MAP')
+    then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM hp_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+  elsif upper(type_cd) in ('LINE', 'LINE_MAP')
+  then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM line_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+  elsif type_cd in ('OA', 'OA_MAP')
+  then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM OA_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+  elsif type_cd in ('PHYSICIAN', 'PHYSICIAN_MAP')
+  then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM physician_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+  elsif type_cd in ('ART', 'ART_MAP')
+  then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM art_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+  elsif type_cd in ('CHAPLAIN', 'CHAPLAIN_MAP')
+  then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        FROM chaplain_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+  end if;
+
+  return v_out_zone_id;
+  exception
+        when others
+        then
+
+           return getZoneIdByState (state, type_cd);
+  end;
+
+  function getZoneIdByBase (in_base_cd varchar2, type_cd varchar2) return varchar2
+  is
+    v_out_zone_id varchar2(2000);
+  begin
+    if type_cd = 'ISR_TABLE'
+    then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        from ISR_TABLE
+        where base_code = in_base_cd;
+    elsif type_cd = 'ISR_HP_TABLE'
+    then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        from ISR_HP_TABLE
+        where base_code = in_base_cd;
+    elsif type_cd = 'ISR_PHYS_TABLE'
+    then
+        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        from ISR_PHYS_TABLE
+        where base_code = in_base_cd;
+    end if;
+
+  return v_out_zone_id;
+
+  exception
+        when others
+        then return 'Error';
+  end;
+
+  function getZoneIdByState (in_state_cd varchar2, type_cd varchar2) return varchar2
+  ---written by Mrosenblum Jan 2005
+  ---Modified to use types Pdorsey@dulcian.com Jan 2005
+  is
+    v_out_zone_id varchar2(2000);
+  begin
+  ---------=================
+  if type_cd in ('HP','HP_MAP') then  --- there is no HP state table use OA
+    SELECT MIL_ORG_CODE INTO v_out_zone_id
+    from OA_TABLE
+    where state = in_state_cd;
+  elsif type_cd in ('LINE','LINE_MAP') then
+     SELECT MIL_ORG_CODE INTO v_out_zone_id
+     from LINE_TABLE
+     where state = in_state_cd;
+  elsif type_cd in ('OA','OA_MAP') then
+    SELECT MIL_ORG_CODE INTO v_out_zone_id
+    from OA_TABLE
+    where state = in_state_cd;
+  end if;
+
+  return v_out_zone_id;
+
+  exception
+        when others
+        then return 'Error';
+  end;
+
+  procedure p_getZoneIdByAddres(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2, zone_id out varchar2, distance_nr out number)
+  --- valid types  'HP_MAP' 'LINE_MAP'  'OA_MAP'
+  --- written by mishe
+  ---modified by pdorsey@dulcian.com Jan 2005 to call state map if failed
+  --modified to support 2 char calls pdorsey Feb 2005
+  as
+        point   MDSYS.sdo_point_type;   -- the geoaddress object
+        v_out_zone_id varchar2(256);
+        v_office_lat_nr  number;
+        v_office_long_nr number;
+  begin
+    point := f_geocodeAddress(street, city, state, postal, 'USA');
+
+    if type_cd in ('HP','HP_MAP') then
+        SELECT MIL_ORG_CODE, OFFICE_LATITUDE, OFFICE_LONGITUDE
+        INTO v_out_zone_id, v_office_lat_nr, v_office_long_nr
+        FROM hp_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+    elsif upper(type_cd) in ('LINE','LINE_MAP')  then
+        SELECT MIL_ORG_CODE, OFFICE_LATITUDE, OFFICE_LONGITUDE
+        INTO v_out_zone_id, v_office_lat_nr, v_office_long_nr
+        FROM line_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+    elsif type_cd in ('OA','OA_MAP')  then
+        SELECT MIL_ORG_CODE, OFFICE_LATITUDE, OFFICE_LONGITUDE
+        INTO v_out_zone_id, v_office_lat_nr, v_office_long_nr
+        FROM OA_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+    elsif type_cd in ('PHYSICIAN','PHYSICIAN_MAP')  then
+        SELECT MIL_ORG_CODE, OFFICE_LATITUDE, OFFICE_LONGITUDE
+        INTO v_out_zone_id, v_office_lat_nr, v_office_long_nr
+        FROM PHYSICIAN_map C
+        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+    end if;
+
+    zone_id:= v_out_zone_id;
+
+    select sdo_geom.sdo_distance(
+        MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),
+        MDSYS.SDO_GEOMETRY(2001,8265, MDSYS.SDO_POINT_TYPE(v_office_long_nr, v_office_lat_nr, NULL), NULL, NULL),
+        0.005,
+        'unit=mile')
+    into distance_nr
+    from dual;
+
+  exception
+        when others
+        then
+           zone_id:= getZoneIdByState (state, type_cd);
+           distance_nr:= 0;
+  end;
+
+
+  function f_getZoneIdByAddres_AD_tx(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2)
+  return varchar2
+  -- mrosenblum@dulcian.com - 20080630 - special version for active duty
+  as
+        point   MDSYS.sdo_point_type;   -- the geoaddress object
+        v_out_zone_id varchar2(256);
+  begin
+
+    point := f_geocodeAddress(street, city, state, postal, 'USA');
+
+    SELECT office
+    INTO v_out_zone_id
+    FROM AD_OA_MAP C
+    WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+
+    return v_out_zone_id;
+
+  exception
+        when others
+        then
+            return null;
+  end;
+
+
+END;
+/
