@@ -1,0 +1,7 @@
+CREATE UNIQUE INDEX SCHOOL_PK ON SCHOOL
+  (
+    MI_PRINX                        ASC
+  )
+NOPARALLEL
+LOGGING
+/

@@ -1,0 +1,7 @@
+CREATE UNIQUE INDEX HP_MAP_PK ON HP_MAP
+  (
+    MI_PRINX                        ASC
+  )
+NOPARALLEL
+LOGGING
+/

@@ -1,0 +1,8 @@
+CREATE UNIQUE INDEX MAPCATALOG_IDX ON MAPINFO_MAPCATALOG
+  (
+    TABLENAME                       ASC,
+    OWNERNAME                       ASC
+  )
+NOPARALLEL
+LOGGING
+/

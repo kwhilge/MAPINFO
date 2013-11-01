@@ -1,0 +1,7 @@
+CREATE UNIQUE INDEX OA_MAP_NEW_PK ON OA_MAP_NEW
+  (
+    MI_PRINX                        ASC
+  )
+NOPARALLEL
+LOGGING
+/

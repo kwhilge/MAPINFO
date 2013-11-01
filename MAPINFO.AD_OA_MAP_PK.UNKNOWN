@@ -1,0 +1,7 @@
+CREATE UNIQUE INDEX AD_OA_MAP_PK ON AD_OA_MAP
+  (
+    MI_PRINX                        ASC
+  )
+NOPARALLEL
+LOGGING
+/

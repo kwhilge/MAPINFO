@@ -1,0 +1,7 @@
+CREATE UNIQUE INDEX ISR_TABLE_PK ON ISR_TABLE
+  (
+    MI_PRINX                        ASC
+  )
+NOPARALLEL
+LOGGING
+/

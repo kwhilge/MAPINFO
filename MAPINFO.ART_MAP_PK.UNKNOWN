@@ -1,0 +1,7 @@
+CREATE UNIQUE INDEX ART_MAP_PK ON ART_MAP
+  (
+    MI_PRINX                        ASC
+  )
+NOPARALLEL
+LOGGING
+/
