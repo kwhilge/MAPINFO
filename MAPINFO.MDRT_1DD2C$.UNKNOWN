@@ -1,0 +1,13 @@
+CREATE TABLE MDRT_1DD2C$
+    (NODE_ID                        NUMBER,
+    NODE_LEVEL                     NUMBER,
+    INFO                           BLOB)
+  LOB ("INFO") STORE AS SYS_LOB0000122157C00003$$
+  (
+   NOCACHE LOGGING
+   CHUNK 8192
+  )
+  NOPARALLEL
+  LOGGING
+  MONITORING
+/

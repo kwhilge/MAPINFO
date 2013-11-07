@@ -1,0 +1,21 @@
+CREATE TABLE MAPINFO_MAPCATALOG
+    (SPATIALTYPE                    FLOAT(126),
+    TABLENAME                      CHAR(32 BYTE),
+    OWNERNAME                      CHAR(32 BYTE),
+    SPATIALCOLUMN                  CHAR(32 BYTE),
+    DB_X_LL                        FLOAT(126),
+    DB_Y_LL                        FLOAT(126),
+    DB_X_UR                        FLOAT(126),
+    DB_Y_UR                        FLOAT(126),
+    COORDINATESYSTEM               CHAR(254 BYTE),
+    SYMBOL                         CHAR(254 BYTE),
+    XCOLUMNNAME                    CHAR(32 BYTE),
+    YCOLUMNNAME                    CHAR(32 BYTE),
+    RENDITIONTYPE                  NUMBER(*,0),
+    RENDITIONCOLUMN                CHAR(32 BYTE),
+    RENDITIONTABLE                 CHAR(32 BYTE),
+    NUMBER_ROWS                    NUMBER(*,0))
+  NOPARALLEL
+  LOGGING
+  MONITORING
+/

@@ -1,0 +1,23 @@
+CREATE OR REPLACE 
+PACKAGE GEO_ARCGIS 
+  IS
+  
+  -- mrosenblum@dulcian.com - May 2006 -- support of GeoCoding Cartridge  v4
+
+  function getZoneIdByAddres(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2) return varchar2;
+  ---type == 'HP_MAP' 'LINE_MAP'   'OA_MAP'
+  function getZoneIdByBase (in_base_cd varchar2, type_cd varchar2) return varchar2;
+  ---type code == 'ISR_TABLE'  'ISR_HP_TABLE'
+  function getZoneIdByState (in_state_cd varchar2, type_cd varchar2) return varchar2;
+  
+  procedure p_getZoneIdBySchool(in_mirs_code varchar2, out_zone_tx out varchar2, out_priority_cd out varchar2);
+  
+  procedure p_getZoneIdByAddres(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2, zone_id out varchar2, distance_nr out number);
+
+  function f_getZoneIdByAddres_AD_tx(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2)
+  return varchar2;
+
+  function f_geocodeAddress(i_street_tx varchar2, i_city_tx varchar2, i_state_tx varchar2, i_zip_tx varchar2, i_country_tx varchar2)
+  return MDSYS.sdo_point_type;
+END; -- Package spec
+/

@@ -1,0 +1,19 @@
+CREATE TABLE ADNCZONES4
+    (OL                             VARCHAR2(10 BYTE),
+    MOL                            VARCHAR2(30 BYTE),
+    SQUADRON                       VARCHAR2(30 BYTE),
+    GROUPA                         VARCHAR2(30 BYTE),
+    MIL_ORG_CODE                   VARCHAR2(30 BYTE),
+    ST                             VARCHAR2(2 BYTE),
+    NAME                           VARCHAR2(28 BYTE),
+    AREA_MI                        VARCHAR2(9 BYTE),
+    ZIPTYPE                        VARCHAR2(1 BYTE),
+    LAT                            NUMBER,
+    LON                            NUMBER,
+    MI_STYLE                       VARCHAR2(254 BYTE),
+    MI_PRINX                       NUMBER(11,0) ,
+    GEOLOC                         MDSYS.SDO_GEOMETRY)
+  NOPARALLEL
+  LOGGING
+  MONITORING
+/

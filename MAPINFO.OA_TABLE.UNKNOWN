@@ -1,0 +1,23 @@
+CREATE TABLE OA_TABLE
+    (OFFICE                         VARCHAR2(5 BYTE),
+    NAF                            VARCHAR2(4 BYTE),
+    MIL_ORG_CODE                   VARCHAR2(8 BYTE),
+    MOL                            VARCHAR2(25 BYTE),
+    OFFICE_CITY                    VARCHAR2(35 BYTE),
+    STATE                          VARCHAR2(2 BYTE),
+    ZONE_DESCRIPTION               VARCHAR2(40 BYTE),
+    RECRUITER                      VARCHAR2(45 BYTE),
+    RIC                            VARCHAR2(7 BYTE),
+    E_MAIL                         VARCHAR2(40 BYTE),
+    SLOT_STATUS                    VARCHAR2(60 BYTE),
+    POSITION_TITLE                 VARCHAR2(30 BYTE),
+    STATE_DESCRIPTION              VARCHAR2(35 BYTE),
+    PSN_TITLE_ABBRV                VARCHAR2(20 BYTE),
+    OFFICE_PSN                     VARCHAR2(1 BYTE),
+    AFRISS                         VARCHAR2(1 BYTE),
+    LTS                            VARCHAR2(1 BYTE),
+    MI_PRINX                       NUMBER(11,0) )
+  NOPARALLEL
+  LOGGING
+  MONITORING
+/
