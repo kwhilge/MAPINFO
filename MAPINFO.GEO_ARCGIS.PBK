@@ -9,6 +9,7 @@ IS
   function f_geocodeAddress(i_street_tx varchar2, i_city_tx varchar2, i_state_tx varchar2, i_zip_tx varchar2, i_country_tx varchar2)
   return MDSYS.sdo_point_type
   is
+       dbmode varchar2(255) := syn_afris_admin.f_getglobaltx('DBMode');
 
        soap_request   VARCHAR2 (4000);
        http_req       UTL_HTTP.req;
@@ -19,18 +20,18 @@ IS
        y              VARCHAR2 (255);
        point          MDSYS.sdo_point_type;
 
-       v_url_tx       varchar2(255) := 'http://dbdev01:8399/arcgis/services/AFRISSR/GeocodeServer';
+       v_url_tx       varchar2(255) := 'http://'||syn_afris_admin.f_getglobaltx('ArcGISServerHost_' || dbmode)||'/arcgis/services/Geocode_Composite_NA/GeocodeServer';
     BEGIN
        --Generate SOAP Request
        soap_request :=
           '<?xml version="1.0" encoding="UTF-8"?>
-            <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns0="http://www.esri.com/schemas/ArcGIS/9.3">
+            <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns0="http://www.esri.com/schemas/ArcGIS/10.1">
                 <env:Body>
                     <ns0:GeocodeAddress>
                         <Address>
                             <PropertyArray>
                                 <PropertySetProperty>
-                                    <Key>Address</Key>
+                                    <Key>Street</Key>
                                     <Value xsi:type="xsd:string">'||i_street_tx||'</Value>
                                 </PropertySetProperty>
                                 <PropertySetProperty>
@@ -42,7 +43,7 @@ IS
                                     <Value xsi:type="xsd:string">'||i_state_tx||'</Value>
                                 </PropertySetProperty>
                                 <PropertySetProperty>
-                                    <Key>Postal</Key>
+                                    <Key>ZIP</Key>
                                     <Value xsi:type="xsd:string">'||i_zip_tx||'</Value>
                                 </PropertySetProperty>
                                 <PropertySetProperty>
@@ -75,7 +76,7 @@ IS
 
        --Close the connection out
        UTL_HTTP.end_response(http_resp);
-       dbms_output.put_line(responseData);
+       --dbms_output.put_line(responseData);
        --Parse the result into an XML object
        responseXml := XMLTYPE.createxml (responseData);
 
@@ -99,10 +100,14 @@ IS
        point := MDSYS.sdo_point_type (x, y, NULL);
 
        return point;
-/*    exception
+    exception
         when others then
-            return MDSYS.sdo_point_type (-74.286891, 40.564404, NULL); --Woodbridge Geocode
-*/
+            if dbmode = 'DEV' then
+                return MDSYS.sdo_point_type (-74.286891, 40.564404, NULL); --Woodbridge Geocode
+            else
+                raise;
+            end if;
+
     END;
 
 
