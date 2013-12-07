@@ -85,14 +85,14 @@ IS
           XMLTYPE.getstringval
              (responseXml.EXTRACT
                  ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="X"]/../Value/text()',
-                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/9.3"'
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
                  )
              );
        y :=
           XMLTYPE.getstringval
              (responseXml.EXTRACT
                  ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="Y"]/../Value/text()',
-                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/9.3"'
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
                  )
              );
 
