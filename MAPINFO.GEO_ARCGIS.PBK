@@ -123,25 +123,25 @@ IS
 
     if type_cd in ('HP','HP_MAP')
     then
-        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        SELECT terrname INTO v_out_zone_id
         FROM hp_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
     elsif upper(type_cd) in ('LINE', 'LINE_MAP')
     then
-        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        SELECT terrname INTO v_out_zone_id
         FROM line_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
     elsif type_cd in ('OA', 'OA_MAP')
     then
-        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        SELECT terrname INTO v_out_zone_id
         FROM OA_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
     elsif type_cd in ('PHYSICIAN', 'PHYSICIAN_MAP')
     then
-        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        SELECT terrname INTO v_out_zone_id
         FROM physician_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
     end if;
 
   return v_out_zone_id;
@@ -176,37 +176,37 @@ IS
 
     if type_cd in ('HP','HP_MAP')
     then
-        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        SELECT terrname INTO v_out_zone_id
         FROM hp_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
   elsif upper(type_cd) in ('LINE', 'LINE_MAP')
   then
-        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        SELECT terrname INTO v_out_zone_id
         FROM line_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
   elsif type_cd in ('OA', 'OA_MAP')
   then
-        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        SELECT terrname INTO v_out_zone_id
         FROM OA_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
   elsif type_cd in ('PHYSICIAN', 'PHYSICIAN_MAP')
   then
-        SELECT MIL_ORG_CODE INTO v_out_zone_id
+        SELECT terrname INTO v_out_zone_id
         FROM physician_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
   elsif type_cd in ('ART', 'ART_MAP')
   then
         SELECT MIL_ORG_CODE INTO v_out_zone_id
         FROM art_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
   elsif type_cd in ('CHAPLAIN', 'CHAPLAIN_MAP')
   then
         SELECT MIL_ORG_CODE INTO v_out_zone_id
         FROM chaplain_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
   end if;
 
@@ -288,39 +288,41 @@ IS
     point := f_geocodeAddress(street, city, state, postal, 'USA');
 
     if type_cd in ('HP','HP_MAP') then
-        SELECT MIL_ORG_CODE, OFFICE_LATITUDE, OFFICE_LONGITUDE
-        INTO v_out_zone_id, v_office_lat_nr, v_office_long_nr
+        SELECT terrname /*, OFFICE_LATITUDE, OFFICE_LONGITUDE*/
+        INTO v_out_zone_id /*, v_office_lat_nr, v_office_long_nr*/
         FROM hp_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
     elsif upper(type_cd) in ('LINE','LINE_MAP')  then
-        SELECT MIL_ORG_CODE, OFFICE_LATITUDE, OFFICE_LONGITUDE
-        INTO v_out_zone_id, v_office_lat_nr, v_office_long_nr
+        SELECT terrname /*, OFFICE_LATITUDE, OFFICE_LONGITUDE*/
+        INTO v_out_zone_id /*, v_office_lat_nr, v_office_long_nr*/
         FROM line_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
     elsif type_cd in ('OA','OA_MAP')  then
-        SELECT MIL_ORG_CODE, OFFICE_LATITUDE, OFFICE_LONGITUDE
-        INTO v_out_zone_id, v_office_lat_nr, v_office_long_nr
+        SELECT terrname /*, OFFICE_LATITUDE, OFFICE_LONGITUDE*/
+        INTO v_out_zone_id /*, v_office_lat_nr, v_office_long_nr*/
         FROM OA_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
     elsif type_cd in ('PHYSICIAN','PHYSICIAN_MAP')  then
-        SELECT MIL_ORG_CODE, OFFICE_LATITUDE, OFFICE_LONGITUDE
-        INTO v_out_zone_id, v_office_lat_nr, v_office_long_nr
+        SELECT terrname /*, OFFICE_LATITUDE, OFFICE_LONGITUDE*/
+        INTO v_out_zone_id /*, v_office_lat_nr, v_office_long_nr*/
         FROM PHYSICIAN_map C
-        WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+        WHERE MDSYS.SDO_RELATE (C.SHAPE, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
     end if;
 
     zone_id:= v_out_zone_id;
-
+    distance_nr := 0;
+/*
     select sdo_geom.sdo_distance(
-        MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),
-        MDSYS.SDO_GEOMETRY(2001,8265, MDSYS.SDO_POINT_TYPE(v_office_long_nr, v_office_lat_nr, NULL), NULL, NULL),
+        MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),
+        MDSYS.SDO_GEOMETRY(2001,null, MDSYS.SDO_POINT_TYPE(v_office_long_nr, v_office_lat_nr, NULL), NULL, NULL),
         0.005,
         'unit=mile')
     into distance_nr
     from dual;
+*/
 
   exception
         when others
@@ -343,7 +345,7 @@ IS
     SELECT office
     INTO v_out_zone_id
     FROM AD_OA_MAP C
-    WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,8265, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
+    WHERE MDSYS.SDO_RELATE (C.GEOLOC, MDSYS.SDO_GEOMETRY(2001,null, point, NULL, NULL),'MASK=ANYINTERACT QUERYTYPE=WINDOW')='TRUE';
 
     return v_out_zone_id;
 
