@@ -111,6 +111,160 @@ IS
     END;
 
 
+  procedure p_StandardizeAddress(io_street_tx in out varchar2, io_city_tx in out varchar2,
+                                 io_state_tx in out varchar2, io_zip_tx in out varchar2,
+                                 io_country_tx in out varchar2)
+  is
+       dbmode varchar2(255) := syn_afris_admin.f_getglobaltx('DBMode');
+
+       soap_request   VARCHAR2 (4000);
+       http_req       UTL_HTTP.req;
+       http_resp      UTL_HTTP.resp;
+       responseData   VARCHAR2 (32000);
+       responseXml    XMLTYPE;
+
+       v_url_tx       varchar2(255) := 'http://'||syn_afris_admin.f_getglobaltx('ArcGISServerHost_' || dbmode)||'/arcgis/services/Geocode_Composite_NA/GeocodeServer';
+    BEGIN
+       --Generate SOAP Request
+       soap_request :=
+          '<?xml version="1.0" encoding="UTF-8"?>
+            <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns0="http://www.esri.com/schemas/ArcGIS/10.1">
+                <env:Body>
+                    <ns0:GeocodeAddress>
+                        <Address>
+                            <PropertyArray>
+                                <PropertySetProperty>
+                                    <Key>Street</Key>
+                                    <Value xsi:type="xsd:string">'||io_street_tx||'</Value>
+                                </PropertySetProperty>
+                                <PropertySetProperty>
+                                    <Key>City</Key>
+                                    <Value xsi:type="xsd:string">'||io_city_tx||'</Value>
+                                </PropertySetProperty>
+                                <PropertySetProperty>
+                                    <Key>State</Key>
+                                    <Value xsi:type="xsd:string">'||io_state_tx||'</Value>
+                                </PropertySetProperty>
+                                <PropertySetProperty>
+                                    <Key>ZIP</Key>
+                                    <Value xsi:type="xsd:string">'||io_zip_tx||'</Value>
+                                </PropertySetProperty>
+                                <PropertySetProperty>
+                                    <Key>Country</Key>
+                                    <Value xsi:type="xsd:string">'||io_country_tx||'</Value>
+                                </PropertySetProperty>
+                            </PropertyArray>
+                        </Address>
+                        <PropMods>
+                            <PropertyArray/>
+                        </PropMods>
+                    </ns0:GeocodeAddress>
+                </env:Body>
+            </env:Envelope>';
+
+       --Create an HTTP request to the server
+       http_req := UTL_HTTP.begin_request(v_url_tx, 'POST', 'HTTP/1.1');
+
+       --Set the headers
+       UTL_HTTP.set_header (http_req, 'Content-Type', 'text/xml');
+       UTL_HTTP.set_header (http_req, 'Content-Length', LENGTH (soap_request));
+       UTL_HTTP.set_header (http_req, 'SOAPAction', '');
+
+       --Write the SOAP envelope to the request
+       UTL_HTTP.write_text (http_req, soap_request);
+
+       --Get the server response and read back the results
+       http_resp := UTL_HTTP.get_response (http_req);
+       UTL_HTTP.read_text (http_resp, responseData);
+
+       --Close the connection out
+       UTL_HTTP.end_response(http_resp);
+       --dbms_output.put_line(responseData);
+       --Parse the result into an XML object
+       responseXml := XMLTYPE.createxml (responseData);
+
+       --Extract the values
+       io_street_tx :=
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="AddNum"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
+                 )
+             ) || ' ' ||
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="StName"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
+                 )
+             ) || ' ' ||
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="StType"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
+                 )
+             )
+             ;
+
+       io_city_tx :=
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="City"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
+                 )
+             );
+
+       io_state_tx :=
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="Region"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
+                 )
+             );
+
+       io_zip_tx :=
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="Postal"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
+                 )
+             );
+
+       io_country_tx :=
+          XMLTYPE.getstringval
+             (responseXml.EXTRACT
+                 ('/soap:Envelope/soap:Body/tns:GeocodeAddressResponse/Result/PropertyArray/PropertySetProperty/Key[text()="Country"]/../Value/text()',
+                  'xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.esri.com/schemas/ArcGIS/10.1"'
+                 )
+             );
+
+    exception
+        when others then
+                raise;
+    END;
+
+
+  function f_getAddressStandardizedField(i_street_tx varchar2, i_city_tx varchar2, i_state_tx varchar2, i_zip_tx varchar2, i_country_tx varchar2, i_field_tx varchar2)
+  return varchar2
+  is
+    v_street_tx varchar2(255) := i_street_tx;
+    v_city_tx varchar2(255) := i_city_tx;
+    v_state_tx varchar2(255) := i_state_tx;
+    v_zip_tx varchar2(255) := i_zip_tx;
+    v_country_tx varchar2(255) := i_country_tx;
+  begin
+    p_StandardizeAddress(v_street_tx, v_city_tx, v_state_tx, v_zip_tx, v_country_tx);
+
+    return case i_field_tx
+                when 'Street' then v_street_tx
+                when 'City' then v_city_tx
+                when 'State' then v_state_tx
+                when 'Zip' then v_zip_tx
+                when 'Country' then v_country_tx
+                else null
+           end;
+  end;
+
+
   function f_getZoneIDByStateZIP(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2)
   return varchar2
   is
