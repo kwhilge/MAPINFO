@@ -239,7 +239,7 @@ IS
 
     exception
         when others then
-                raise;
+                null; -- ignore geocoding exceptions
     END;
 
 
