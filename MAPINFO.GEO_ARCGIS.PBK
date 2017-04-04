@@ -102,6 +102,18 @@ IS
        return point;
     exception
         when others then
+            begin
+                UTL_HTTP.end_response(http_resp);
+            exception when others then
+                null;
+            end;
+
+            begin
+                UTL_HTTP.end_request(http_req);
+            exception when others then
+                null;
+            end;
+
             if dbmode = 'DEV' then
                 return MDSYS.sdo_point_type (-74.286891, 40.564404, NULL); --Woodbridge Geocode
             else
