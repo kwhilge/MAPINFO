@@ -459,7 +459,7 @@ IS
   ---------=================
   if type_cd in ('HP','HP_MAP') then  --- there is no HP state table use OA
     SELECT MIL_ORG_CODE INTO v_out_zone_id
-    from OA_TABLE
+    from HP_TABLE
     where state = in_state_cd;
   elsif type_cd in ('LINE','LINE_MAP') then
      SELECT MIL_ORG_CODE INTO v_out_zone_id
