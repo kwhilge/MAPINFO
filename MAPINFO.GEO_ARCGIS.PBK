@@ -20,8 +20,15 @@ IS
        y              VARCHAR2 (255);
        point          MDSYS.sdo_point_type;
 
+       ex_custom EXCEPTION;
+       PRAGMA EXCEPTION_INIT( ex_custom, -20001 );
+
        v_url_tx       varchar2(255) := 'http://'||syn_afris_admin.f_getglobaltx('ArcGISServerHost_' || dbmode)||'/arcgis/services/Geocode_Composite_NA/GeocodeServer';
     BEGIN
+      if i_zip_tx in ('09104') then --Certain Zip codes are not be geocoded correctly by ArcGIS and shouldn't use the point it determines
+        raise ex_custom;
+      end if;
+
        --Generate SOAP Request
        soap_request :=
           '<?xml version="1.0" encoding="UTF-8"?>
@@ -119,7 +126,6 @@ IS
             else
                 raise;
             end if;
-
     END;
 
 
