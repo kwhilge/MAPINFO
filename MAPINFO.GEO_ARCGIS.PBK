@@ -454,7 +454,7 @@ IS
         select zoneid_tx
           into v_out_zone_id
           from rc_afrpaidlead_map
-         where type_tx = 'PHYSICIAN'
+         where type_tx = 'OA'
            and zip_tx = zip_tx;
 /*
         SELECT terrname INTO v_out_zone_id
@@ -605,7 +605,7 @@ IS
         select zoneid_tx
           into v_out_zone_id
           from rc_afrpaidlead_map
-         where type_tx = 'PHYSICIAN'
+         where type_tx = 'OA'
            and zip_tx = zip_tx;
 /*
         SELECT terrname
