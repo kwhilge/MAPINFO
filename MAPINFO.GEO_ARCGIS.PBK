@@ -419,7 +419,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'HP'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT terrname INTO v_out_zone_id
         FROM hp_map C
@@ -431,7 +431,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'LINE'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT terrname INTO v_out_zone_id
         FROM syn_line_map C
@@ -443,7 +443,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'OA'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT terrname INTO v_out_zone_id
         FROM OA_map C
@@ -455,7 +455,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'OA'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT terrname INTO v_out_zone_id
         FROM physician_map C
@@ -467,7 +467,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'ART'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT MIL_ORG_CODE INTO v_out_zone_id
         FROM art_map C
@@ -479,7 +479,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'CHAPLAIN'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT MIL_ORG_CODE INTO v_out_zone_id
         FROM chaplain_map C
@@ -491,8 +491,12 @@ IS
   exception
         when others
         then
-
-           return getZoneIdByState (state, type_cd);
+           v_out_zone_id := getZoneIdByCityState(city,state,type_cd);
+           if v_out_zone_id is not null then
+                return v_out_zone_id;
+           else
+                return getZoneIdByState (state, type_cd);
+           end if;
   end;
 
   function getZoneIdByBase (in_base_cd varchar2, type_cd varchar2) return varchar2
@@ -551,6 +555,39 @@ IS
         then return 'Error';
   end;
 
+  function getZoneIdByCityState (in_city_cd varchar2, in_state_cd varchar2, type_cd varchar2) return varchar2
+  is
+    v_type_cd varchar2(255);
+    v_out_zone_id varchar2(2000);
+  begin
+    if type_cd in ('HP','HP_MAP') then
+        v_type_cd := 'HP';
+    elsif upper(type_cd) in ('LINE', 'LINE_MAP') then
+        v_type_cd := 'LINE';
+    elsif type_cd in ('OA', 'OA_MAP') then
+        v_type_cd := 'OA';
+    elsif type_cd in ('PHYSICIAN', 'PHYSICIAN_MAP') then
+        v_type_cd := 'OA';
+    elsif type_cd in ('ART', 'ART_MAP') then
+        v_type_cd := 'ART';
+    elsif type_cd in ('CHAPLAIN', 'CHAPLAIN_MAP') then
+        v_type_cd := 'CHAPLAIN';
+    end if;
+
+    select zoneid_tx
+      into v_out_zone_id
+      from rc_afrpaidlead_map
+     where type_tx = v_type_cd
+       and trim(upper(city_tx)) = trim(upper(in_city_cd))
+       and trim(upper(state_tx)) = trim(upper(in_state_cd))
+       and rownum = 1;
+
+    return v_out_zone_id;
+  exception
+    when others then
+        return null;
+  end;
+
   procedure p_getZoneIdByAddres(street varchar2, city varchar2, state varchar2, postal varchar2, type_cd varchar2, zone_id out varchar2, distance_nr out number)
   --- valid types  'HP_MAP' 'LINE_MAP'  'OA_MAP'
   --- written by mishe
@@ -570,7 +607,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'HP'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT terrname
         INTO v_out_zone_id
@@ -582,7 +619,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'LINE'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT terrname
         INTO v_out_zone_id
@@ -594,7 +631,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'OA'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT terrname
         INTO v_out_zone_id
@@ -606,7 +643,7 @@ IS
           into v_out_zone_id
           from rc_afrpaidlead_map
          where type_tx = 'OA'
-           and zip_tx = zip_tx;
+           and zip_tx = postal;
 /*
         SELECT terrname
         INTO v_out_zone_id

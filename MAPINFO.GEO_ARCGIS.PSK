@@ -27,5 +27,7 @@ PACKAGE GEO_ARCGIS
 */
   function f_getAddressStandardizedField(i_street_tx varchar2, i_city_tx varchar2, i_state_tx varchar2, i_zip_tx varchar2, i_country_tx varchar2, i_field_tx varchar2)
   return varchar2;
+    function getZoneIdByCityState (in_city_cd varchar2, in_state_cd varchar2, type_cd varchar2) return varchar2;
+
 END; -- Package spec
 /
